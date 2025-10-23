@@ -1,0 +1,13 @@
+# See backend and frontend .gitignore files
+
+# IDE
+.vscode/
+.idea/
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
