@@ -1,13 +1,18 @@
-from .user import UserCreate, UserLogin, UserResponse, Token, ChessPlatformCredentials
-from .game import GameCreate, GameResponse, GameImportRequest
+"""Pydantic schemas for API validation."""
+from .lesson import (
+    LessonCreate,
+    LessonResponse,
+    LessonCommentResponse,
+    LessonListResponse,
+    UserLessonProgressUpdate,
+    UserLessonProgressResponse
+)
 
 __all__ = [
-    "UserCreate",
-    "UserLogin",
-    "UserResponse",
-    "Token",
-    "ChessPlatformCredentials",
-    "GameCreate",
-    "GameResponse",
-    "GameImportRequest",
+    "LessonCreate",
+    "LessonResponse",
+    "LessonCommentResponse",
+    "LessonListResponse",
+    "UserLessonProgressUpdate",
+    "UserLessonProgressResponse"
 ]

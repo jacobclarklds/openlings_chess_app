@@ -39,3 +39,4 @@ class Game(Base):
 
     # Relationships
     user = relationship("User", back_populates="games")
+    lessons = relationship("Lesson", back_populates="game")

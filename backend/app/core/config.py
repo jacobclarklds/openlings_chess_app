@@ -1,20 +1,39 @@
+"""
+Configuration settings for the Chess Training application.
+"""
+
 from pydantic_settings import BaseSettings
+from typing import Optional
+
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/chess_training"
-    SECRET_KEY: str = "your-secret-key-change-this"
+    """Application settings loaded from environment variables."""
+
+    # Database
+    DATABASE_URL: str
+
+    # Security
+    SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    # Google OAuth Configuration
-    GOOGLE_CLIENT_ID: str = ""
-    GOOGLE_CLIENT_SECRET: str = ""
-    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/auth/google/callback"
+    # Google OAuth
+    GOOGLE_CLIENT_ID: str
+    GOOGLE_CLIENT_SECRET: str
+    GOOGLE_REDIRECT_URI: str
 
-    # Frontend URL for redirects after OAuth
-    FRONTEND_URL: str = "http://localhost:3000"
+    # Frontend
+    FRONTEND_URL: str
+
+    # Anthropic API Configuration
+    ANTHROPIC_API_KEY: str
+    ANTHROPIC_MODEL: str = "claude-sonnet-4-20250514"
+    ANTHROPIC_MAX_TOKENS: int = 4096
 
     class Config:
         env_file = ".env"
+        case_sensitive = True
 
+
+# Global settings instance
 settings = Settings()
