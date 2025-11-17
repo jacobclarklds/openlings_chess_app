@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import CMChessboard from '@/components/chess/CMChessboard';
+import InteractiveChessboard from '@/components/chess/InteractiveChessboard';
 
 export default function TestBoardPage() {
   const [step, setStep] = useState(0);
@@ -64,10 +64,11 @@ export default function TestBoardPage() {
           {/* Chess Board */}
           <div>
             <div className="bg-gradient-to-br from-amber-100 to-amber-50 p-6 rounded-2xl shadow-2xl">
-              <CMChessboard
+              <InteractiveChessboard
                 position={currentPosition.fen}
                 annotations={currentPosition.annotations || []}
                 width={500}
+                interactive={false}
               />
             </div>
           </div>

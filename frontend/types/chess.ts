@@ -1,6 +1,6 @@
 export interface BoardAnnotation {
-    type: 'arrow' | 'circle' | 'highlight';
-    color: 'red' | 'green' | 'blue' | 'yellow' | 'orange';
+    type: 'arrow' | 'circle' | 'highlight' | 'dot';
+    color: 'red' | 'green' | 'blue' | 'yellow' | 'orange' | 'purple' | 'cyan';
     from?: string;
     to?: string;
     square?: string;
@@ -24,6 +24,8 @@ export interface CoachComment {
     move_to_make?: string;
     timestamp: number;
     question?: AIQuestion;
+    requires_move?: boolean;  // If true, user must make a move before proceeding
+    expected_move?: { from: string; to: string };  // Optional expected move for validation
 }
 
 export interface Lesson {

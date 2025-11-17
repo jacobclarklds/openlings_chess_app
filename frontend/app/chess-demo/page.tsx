@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import CMChessboard from '@/components/chess/CMChessboard';
+import InteractiveChessboard from '@/components/chess/InteractiveChessboard';
 import CoachCommentPanel from '@/components/chess/CoachCommentPanel';
 import { CoachComment } from '@/types/chess';
 
@@ -10,6 +10,8 @@ export default function ChessDemoPage() {
   const [lesson, setLesson] = useState<any>(null);
   const [currentCommentIndex, setCurrentCommentIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [userMadeMove, setUserMadeMove] = useState(false);
+  const [moveResult, setMoveResult] = useState<'correct' | 'incorrect' | null>(null);
 
   const samplePGN = `[Event "Casual Game"]
 [Site "Online"]
@@ -56,6 +58,31 @@ export default function ChessDemoPage() {
   const currentComment = lesson?.comments?.[currentCommentIndex];
   const position = currentComment?.position_fen || 'start';
   const annotations = currentComment?.annotations || [];
+  const requiresMove = currentComment?.requires_move || false;
+  const expectedMove = currentComment?.expected_move;
+
+  // Reset move state when comment changes
+  useEffect(() => {
+    setUserMadeMove(false);
+    setMoveResult(null);
+  }, [currentCommentIndex]);
+
+  const handleUserMove = (from: string, to: string) => {
+    console.log('User made move:', from, to);
+    setUserMadeMove(true);
+
+    // Check if move matches expected move
+    if (expectedMove) {
+      const isCorrect = from === expectedMove.from && to === expectedMove.to;
+      setMoveResult(isCorrect ? 'correct' : 'incorrect');
+      console.log('Move result:', isCorrect ? 'correct' : 'incorrect');
+    } else {
+      // No expected move, just allow any valid move
+      setMoveResult('correct');
+    }
+  };
+
+  const canProceedToNext = !requiresMove || userMadeMove;
 
   // Debug logging whenever index changes
   useEffect(() => {
@@ -65,10 +92,13 @@ export default function ChessDemoPage() {
       console.log('Current comment:', currentComment);
       console.log('Position FEN:', position);
       console.log('Annotations:', annotations);
+      console.log('Requires move:', requiresMove);
+      console.log('Expected move:', expectedMove);
+      console.log('User made move:', userMadeMove);
       console.log('Total comments:', lesson?.comments?.length);
       console.log('=======================');
     }
-  }, [currentCommentIndex, lesson, currentComment, position, annotations]);
+  }, [currentCommentIndex, lesson, currentComment, position, annotations, requiresMove, expectedMove, userMadeMove]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4 md:p-8">
@@ -144,12 +174,49 @@ export default function ChessDemoPage() {
             <div className="flex justify-center items-start">
               <div className="w-full max-w-[600px]">
                 <div className="bg-gradient-to-br from-amber-100 to-amber-50 p-6 rounded-2xl shadow-2xl border-4 border-amber-900/20">
-                  <CMChessboard
+                  <InteractiveChessboard
                     position={position}
                     annotations={annotations}
                     width={560}
+                    interactive={requiresMove}
+                    onMove={handleUserMove}
+                    expectedMove={expectedMove}
                   />
                 </div>
+
+                {/* Move Feedback */}
+                {requiresMove && (
+                  <div className="mt-4">
+                    {!userMadeMove ? (
+                      <div className="p-4 bg-blue-500/20 border border-blue-400/50 rounded-xl backdrop-blur">
+                        <p className="text-blue-100 font-semibold text-center">
+                          🎮 Make your move on the board!
+                        </p>
+                        <p className="text-sm text-blue-200 text-center mt-1">
+                          Click a piece to see legal moves
+                        </p>
+                      </div>
+                    ) : moveResult === 'correct' ? (
+                      <div className="p-4 bg-green-500/20 border border-green-400/50 rounded-xl backdrop-blur">
+                        <p className="text-green-100 font-semibold text-center">
+                          ✅ {expectedMove ? 'Excellent move!' : 'Good move!'}
+                        </p>
+                        <p className="text-sm text-green-200 text-center mt-1">
+                          Click Next to continue
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-orange-500/20 border border-orange-400/50 rounded-xl backdrop-blur">
+                        <p className="text-orange-100 font-semibold text-center">
+                          🤔 Not quite the best move
+                        </p>
+                        <p className="text-sm text-orange-200 text-center mt-1">
+                          Try again or click Next to see the solution
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Reset Button */}
                 <button
@@ -171,6 +238,7 @@ export default function ChessDemoPage() {
                   totalComments={lesson.comments.length}
                   onNext={() => setCurrentCommentIndex(Math.min(currentCommentIndex + 1, lesson.comments.length - 1))}
                   onPrevious={() => setCurrentCommentIndex(Math.max(currentCommentIndex - 1, 0))}
+                  canProceed={canProceedToNext}
                 />
               )}
 

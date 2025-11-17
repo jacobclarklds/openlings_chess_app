@@ -221,6 +221,14 @@ After creating each comment, I'll provide you with the current annotations and q
             ]
             logger.info(f"    Long game: selected {len(key_indices)} key positions to analyze")
 
+        # Track if we've added an interactive move yet
+        has_interactive_move = False
+        interactive_position_index = None
+
+        # Choose a middle position for the interactive move (not first or last)
+        if len(key_indices) >= 3:
+            interactive_position_index = len(key_indices) // 2
+
         for idx, position_idx in enumerate(key_indices):  # Generate comment for each selected position
             if position_idx >= len(positions):
                 logger.warning(f"    ⚠️  Position index {position_idx} out of range, skipping")
@@ -229,17 +237,37 @@ After creating each comment, I'll provide you with the current annotations and q
             position = positions[position_idx]
             comment_start = time.time()
             logger.info(f"    📍 Generating comment {idx + 1}/{len(key_indices)} for position {position_idx} (move {position['move_number']})...")
-            
+
+            # Determine if this should be an interactive move
+            is_interactive = (not has_interactive_move and
+                            idx == interactive_position_index and
+                            position_idx < len(positions) - 1)  # Not the last position
+
+            if is_interactive:
+                has_interactive_move = True
+                logger.info(f"    🎮 Making position {idx + 1} interactive - user will need to make a move")
+
             # Generate comment using Ollama
             comment_text = await self._generate_comment_for_position(
                 position,
                 game_data,
                 user_elo,
-                idx
+                idx,
+                is_interactive
             )
 
             # Create some basic annotations
             annotations = self._create_default_annotations(position['fen'], idx)
+
+            # Get the expected move if this is interactive
+            expected_move = None
+            if is_interactive and position_idx + 1 < len(positions):
+                next_move = positions[position_idx + 1].get('move')
+                if next_move and len(next_move) >= 4:
+                    expected_move = {
+                        'from': next_move[:2],
+                        'to': next_move[2:4]
+                    }
 
             lesson_comments.append({
                 "id": str(idx),
@@ -248,9 +276,11 @@ After creating each comment, I'll provide you with the current annotations and q
                 "annotations": annotations,
                 "question": None if idx % 2 == 0 else self._create_default_question(idx),
                 "timestamp": int(asyncio.get_event_loop().time() * 1000),
-                "move_to_make": position.get('move')
+                "move_to_make": position.get('move'),
+                "requires_move": is_interactive,
+                "expected_move": expected_move
             })
-            
+
             comment_time = time.time() - comment_start
             logger.info(f"    ✓ Comment {idx + 1} generated in {comment_time:.2f}s ({len(comment_text)} characters)")
 
@@ -262,10 +292,11 @@ After creating each comment, I'll provide you with the current annotations and q
         position: Dict[str, Any],
         game_data: Dict[str, Any],
         user_elo: int,
-        comment_index: int
+        comment_index: int,
+        is_interactive: bool = False
     ) -> str:
         """Generate commentary for a specific position using Ollama."""
-        
+
         # Analyze the position
         logger.info(f"      🔍 Analyzing position {position['move_number']}...")
         analysis_start = time.time()
@@ -283,7 +314,7 @@ After creating each comment, I'll provide you with the current annotations and q
         # Determine stage
         move_num = position['move_number']
         total_moves = len(game_data['moves'])
-        
+
         if move_num == 0:
             stage = "opening"
             stage_title = "Opening Position"
@@ -298,7 +329,23 @@ After creating each comment, I'll provide you with the current annotations and q
             stage_title = "Endgame"
 
         # Build context for Ollama
-        context = f"""You are a chess coach. Analyze this position and create educational commentary.
+        if is_interactive:
+            context = f"""You are a chess coach. This is an INTERACTIVE position where the student will make a move.
+
+Position FEN: {position['fen']}
+Move Number: {move_num}
+Game Stage: {stage_title}
+Student ELO: {user_elo}
+White: {game_data['white']}
+Black: {game_data['black']}
+"""
+            if analysis:
+                context += f"\nEngine Evaluation: {analysis.get('stockfish_eval', {}).get('evaluation', 'N/A')}"
+                context += f"\nBest Move: {analysis.get('stockfish_eval', {}).get('best_move', 'N/A')}"
+
+            context += f"\n\nWrite a BRIEF (3-5 sentences) challenge for the student. Use markdown heading for the title. Ask them to find the best move in this position. Explain why this moment is important and what they should look for. End with 'Make your move on the board.' Be encouraging!"
+        else:
+            context = f"""You are a chess coach. Analyze this position and create educational commentary.
 
 Position FEN: {position['fen']}
 Move Number: {move_num}
@@ -308,11 +355,11 @@ White: {game_data['white']}
 Black: {game_data['black']}
 """
 
-        if analysis:
-            context += f"\nEngine Evaluation: {analysis.get('stockfish_eval', {}).get('evaluation', 'N/A')}"
-            context += f"\nBest Move: {analysis.get('stockfish_eval', {}).get('best_move', 'N/A')}"
+            if analysis:
+                context += f"\nEngine Evaluation: {analysis.get('stockfish_eval', {}).get('evaluation', 'N/A')}"
+                context += f"\nBest Move: {analysis.get('stockfish_eval', {}).get('best_move', 'N/A')}"
 
-        context += f"\n\nWrite a VERY BRIEF (3-5 sentences max) educational comment about this position. Use markdown heading for the title. Be concise and focused. Teach ONE key concept appropriate for a {user_elo} ELO player."
+            context += f"\n\nWrite a VERY BRIEF (3-5 sentences max) educational comment about this position. Use markdown heading for the title. Be concise and focused. Teach ONE key concept appropriate for a {user_elo} ELO player."
 
         # Call Ollama
         logger.info(f"      🤖 Calling Ollama API (model: {self.model})...")

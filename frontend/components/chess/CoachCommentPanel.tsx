@@ -11,6 +11,7 @@ interface CoachCommentPanelProps {
     totalComments: number;
     onNext: () => void;
     onPrevious: () => void;
+    canProceed?: boolean;
 }
 
 export default function CoachCommentPanel({
@@ -18,7 +19,8 @@ export default function CoachCommentPanel({
     currentIndex,
     totalComments,
     onNext,
-    onPrevious
+    onPrevious,
+    canProceed = true
 }: CoachCommentPanelProps) {
     if (!comment) {
         return <div className="bg-white/10 backdrop-blur border border-white/20 rounded-xl shadow-xl p-6 text-white">No comment available</div>;
@@ -55,10 +57,11 @@ export default function CoachCommentPanel({
 
                     <button
                         onClick={onNext}
-                        disabled={currentIndex === totalComments - 1}
+                        disabled={currentIndex === totalComments - 1 || !canProceed}
                         className="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold
                                  hover:from-blue-600 hover:to-cyan-600 disabled:opacity-30
                                  disabled:cursor-not-allowed transition-all shadow-lg"
+                        title={!canProceed ? 'Make your move first!' : ''}
                     >
                         Next →
                     </button>
