@@ -15,7 +15,12 @@ from app.schemas.lesson import (
     UserLessonProgressResponse
 )
 from app.api.auth import get_current_user
-from app.services.coach_agent import ChessCoachAgent
+try:
+    from app.services.coach_agent import ChessCoachAgent
+except ImportError:
+    ChessCoachAgent = None
+from app.services.ollama_coach_agent import OllamaChessCoachAgent
+from app.core.config import settings
 import asyncio
 from datetime import datetime
 
@@ -34,7 +39,13 @@ async def generate_lesson_background(
     Background task to generate a lesson using the AI agent.
     Updates the lesson in the database when complete.
     """
-    agent = ChessCoachAgent()
+    # Choose agent based on configuration
+    if settings.AI_PROVIDER == "ollama":
+        agent = OllamaChessCoachAgent()
+    else:
+        if ChessCoachAgent is None:
+            raise Exception("Anthropic provider not available. Please install anthropic package or set AI_PROVIDER=ollama")
+        agent = ChessCoachAgent()
     
     try:
         # Generate the lesson

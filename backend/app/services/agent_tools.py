@@ -19,9 +19,9 @@ class AgentToolkit:
     """
 
     def __init__(self):
-        self.stockfish = StockfishService()
-        self.maia = MaiaService(self.stockfish)
-        self.coordinator = AnalysisCoordinator(self.stockfish, self.maia)
+        self.coordinator = AnalysisCoordinator()
+        self.stockfish = self.coordinator.stockfish
+        self.maia = self.coordinator.maia
         self.opening_service = OpeningService()
         
         # Store annotations and questions created during lesson generation
@@ -221,4 +221,5 @@ class AgentToolkit:
 
     async def cleanup(self):
         """Clean up resources."""
-        await self.stockfish.cleanup()
+        if hasattr(self.stockfish, 'cleanup'):
+            await self.stockfish.cleanup()

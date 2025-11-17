@@ -25,10 +25,18 @@ class Settings(BaseSettings):
     # Frontend
     FRONTEND_URL: str
 
-    # Anthropic API Configuration
-    ANTHROPIC_API_KEY: str
+    # AI Configuration
+    AI_PROVIDER: str = "ollama"  # "anthropic" or "ollama"
+
+    # Anthropic API Configuration (optional)
+    ANTHROPIC_API_KEY: Optional[str] = None
     ANTHROPIC_MODEL: str = "claude-sonnet-4-20250514"
     ANTHROPIC_MAX_TOKENS: int = 4096
+
+    # Ollama Configuration
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    OLLAMA_MODEL: str = "gpt-oss:20b"
+    OLLAMA_MAX_TOKENS: int = 4096
 
     class Config:
         env_file = ".env"
