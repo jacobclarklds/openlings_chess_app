@@ -1,0 +1,3 @@
+# MAIA-2 model files (downloaded at runtime)
+maia2_models/*.pt
+maia2_models/*.yaml
